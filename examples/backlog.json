@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "description": "跨会话待办队列 - 长期任务追踪",
+  "tasks": [
+    {
+      "id": "example-task",
+      "title": "示例任务：添加用户认证功能",
+      "status": "pending",
+      "priority": "high",
+      "created": "2026-01-28T10:00:00Z",
+      "why": "用户需要登录才能访问受保护的资源",
+      "what": "实现 JWT 认证，包括登录、注册、token 刷新接口",
+      "checklist": [
+        "创建 User 模型",
+        "实现注册接口",
+        "实现登录接口",
+        "添加 JWT 中间件",
+        "编写测试"
+      ]
+    },
+    {
+      "id": "completed-example",
+      "title": "已完成示例：项目初始化",
+      "status": "completed",
+      "priority": "high",
+      "created": "2026-01-27T10:00:00Z",
+      "why": "需要搭建项目基础结构",
+      "what": "初始化项目，配置开发环境"
+    }
+  ],
+  "archive": [],
+  "stats": {
+    "total": 2,
+    "pending": 1,
+    "in_progress": 0,
+    "completed": 1
+  }
+}
