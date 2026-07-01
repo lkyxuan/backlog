@@ -28,7 +28,6 @@ GitHub PRs can still be used by the host project for code review, CI, version hi
 README.md
 SKILL.md                         # generic Backlog skill, the product core
 SPEC.md                          # Backlog data/file format
-adapters/claude-code/SKILL.md    # Claude Code adapter
 AGENT_PROTOCOL.md                # detailed generic agent behavior
 LICENSE
 templates/simple/backlog/backlog.json
@@ -36,30 +35,20 @@ templates/simple/backlog/backlog.json
 
 ## Install into a host project
 
-### Generic skill installation
-
-Install these into the host project or the host agent's skill system:
+Install Backlog with your agent or skill-system installer. The installer should use:
 
 ```text
 SKILL.md
 templates/simple/backlog/backlog.json
 ```
 
-The host project should end up with:
+The host project should end up with its own workflow data file:
 
 ```text
 backlog/backlog.json
 ```
 
-### Claude Code installation
-
-From the host project root:
-
-```bash
-mkdir -p .claude/skills/backlog
-cp /path/to/backlog/adapters/claude-code/SKILL.md .claude/skills/backlog/SKILL.md
-cp -r /path/to/backlog/templates/simple/backlog ./backlog
-```
+Backlog does not encode agent-specific install paths. Claude Code, Hermes, or other systems should place `SKILL.md` wherever their own skill mechanism expects it.
 
 Add this to the host project's `CLAUDE.md`, `AGENTS.md`, Hermes profile, or equivalent agent rules:
 
