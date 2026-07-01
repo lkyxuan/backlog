@@ -1,62 +1,88 @@
 ---
 name: backlog
-version: "3.0.0"
-description: 跨会话任务追踪 - 长期待办队列管理
+version: "5.0.0"
+description: Cross-session repo-local Backlog workflow management
 user-invocable: true
 ---
 
-# /backlog - 待办队列管理
+# /backlog - repo-local workflow management
 
-基于 `docs/backlog.json` 的跨会话任务追踪。
+Backlog stores long-lived project workflow state in `docs/backlog.json`. It is designed to be installed inside a host project, so any agent can recover task state across sessions.
 
-## 命令
+External project-management platforms are not part of Backlog. Host projects may still use GitHub PRs for code review, version history, CI, and merging.
 
-| 命令 | 说明 |
-|------|------|
-| `/backlog` | 显示所有待办任务 |
-| `/backlog add "标题"` | 添加新任务 |
-| `/backlog start <id>` | 开始任务（status → in_progress） |
-| `/backlog done <id>` | 完成任务（status → completed） |
+## Commands
 
-## 任务结构
+| Command | Meaning |
+|---|---|
+| `/backlog` | Show open tasks |
+| `/backlog add "title"` | Add a task to `docs/backlog.json` |
+| `/backlog start <id>` | Mark task `in_progress` |
+| `/backlog block <id>` | Mark task `blocked` with reason |
+| `/backlog review <id>` | Mark task `review` after implementation, before validation/merge |
+| `/backlog done <id>` | Mark task `completed` |
+| `/backlog cancel <id>` | Mark task `cancelled` |
+
+## Data model
 
 ```json
 {
-  "id": "简短英文ID（用于引用）",
-  "title": "任务标题（一眼能看懂）",
-  "status": "pending | in_progress | completed",
+  "id": "short-id",
+  "title": "Human-readable title",
+  "status": "pending | in_progress | blocked | review | completed | cancelled",
   "priority": "high | medium | low",
-  "why": "为什么要做这个任务",
-  "what": "要做什么",
-  "checklist": ["步骤1", "步骤2"]
+  "type": "bug | feature | chore | research | docs | ops",
+  "area": "spider | consumer | storage | monitoring | infra | api | frontend",
+  "why": "Why this task exists",
+  "what": "What should be done",
+  "acceptance": ["Acceptance criterion 1", "Acceptance criterion 2"],
+  "checklist": ["Step 1", "Step 2"],
+  "depends_on": ["other-task-id"],
+  "related": ["related-task-id"],
+  "context_refs": ["context-id"],
+  "events": []
 }
 ```
 
-## 命名规范
+Field notes:
+- `id`: short English identifier, e.g. `merge-queues`.
+- `title`: concise title that humans understand quickly.
+- `depends_on`: hard dependency; do not start current task before these are done.
+- `related`: relevant context only; not a blocking relationship.
+- `context_refs`: references to durable project context docs, often under `docs/backlog/contexts/` in the host project.
 
-- **id**: 简短英文，用于命令引用，如 `merge-queues`
-- **title**: 让用户一眼看懂，如 `合并 Celery 队列为单一维护队列`
+## Agent behavior
 
-**示例**：
-```json
-{
-  "id": "merge-queues",
-  "title": "合并 Celery 队列为单一维护队列"
-}
+1. Session start: read open backlog tasks.
+2. Before work: locate the backlog task; create one if missing.
+3. Starting work: set `status → in_progress`.
+4. Implementation finished but not validated/merged: set `status → review`.
+5. Human decision needed: set `status → blocked` with a clear reason.
+6. Validation/merge done: set `status → completed`.
+7. Work abandoned: set `status → cancelled`.
+8. Code changes should still go through the host project's branch/PR workflow when applicable.
+
+## Shared CLI
+
+All agents can use the repo-local CLI instead of depending on a specific slash-command runtime:
+
+```bash
+python3 scripts/backlog_cli.py list --open
+python3 scripts/backlog_cli.py show <id>
+python3 scripts/backlog_cli.py start <id> --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py block <id> --reason "..." --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py review <id> --summary "..." --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py done <id> --summary "..." --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py cancel <id> --reason "..."
 ```
 
-## AI 行为
+This skill is the natural-language wrapper for that CLI. If uncertain, use the CLI directly.
 
-1. **会话开始**：读取 backlog.json，显示待办任务
-2. **开始任务**：设置 status → in_progress
-3. **完成任务**：设置 status → completed，显示剩余待办
-4. **更新后提交**：提醒用户 git push
+## Difference from Claude Code's built-in Task/Todo tool
 
-## 与 Claude Code 内置 Task 的区别
-
-| 特性 | /backlog | Claude Code Task |
-|------|----------|------------------|
-| 存储 | 文件持久化 | 会话内存 |
-| 生命周期 | 跨会话 | 会话结束消失 |
-| 用途 | 长期待办队列 | 当前工作步骤分解 |
-| 信息量 | why/what/checklist | 简单描述 |
+| Feature | Backlog | Claude Code Task/Todo |
+|---|---|---|
+| Storage | Repo file | Session memory |
+| Lifecycle | Cross-session, cross-agent | Current session only |
+| Purpose | Long-lived project workflow state | Current implementation steps |
+| Detail | why/what/acceptance/checklist/context | Short task descriptions |
