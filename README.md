@@ -2,7 +2,7 @@
 
 Backlog is a generic, file-first workflow skill for AI-assisted projects.
 
-It is not a task app, server, or CLI product. It is a small skill plus a template that a host repository installs so agents can share the same long-lived project workflow state.
+It provides a small skill plus a template that a host repository installs so agents can share the same long-lived project workflow state.
 
 ```text
 Backlog skill + backlog file + host project rules = shared AI workflow memory
@@ -32,7 +32,7 @@ The host project should end up with its own workflow data file:
 backlog/backlog.json
 ```
 
-Backlog does not encode agent-specific install paths. Claude Code, Hermes, or other systems should place `SKILL.md` wherever their own skill mechanism expects it.
+Each agent or skill-system installer places `SKILL.md` according to its own skill mechanism.
 
 Add this to the host project's `CLAUDE.md`, `AGENTS.md`, Hermes profile, or equivalent agent rules:
 
@@ -41,14 +41,14 @@ Add this to the host project's `CLAUDE.md`, `AGENTS.md`, Hermes profile, or equi
 
 This project uses Backlog.
 `backlog/backlog.json` is the project workflow source of truth.
-Agents may edit Backlog files directly if they follow the Backlog skill.
-PRs are for code review/versioning only; Backlog remains the workflow source of truth.
+Agents edit Backlog files according to the Backlog skill.
+PRs are for code review/versioning; Backlog remains the workflow source of truth.
 ```
 
 ## Workflow states
 
 ```text
-pending       planned, not started
+pending       planned
 in_progress   currently being worked on
 blocked       needs a human decision or external unblock
 review        implementation done; waiting for validation/PR/merge

@@ -1,13 +1,13 @@
 ---
 name: backlog
-version: "8.0.0"
+version: "8.1.0"
 description: Generic file-first Backlog skill for repo-local AI project management
 user-invocable: true
 ---
 
 # Backlog skill
 
-Backlog is a generic skill/protocol, not a required program. It stores long-lived project workflow state in the host repository so multiple agents can share the same task memory.
+Backlog is a generic skill/protocol for long-lived project workflow state in a host repository. Multiple agents can share the same task memory through the same Backlog files.
 
 ## Data location
 
@@ -75,8 +75,6 @@ Recommended fields:
 
 ## Status values
 
-Only these status values are valid:
-
 ```text
 pending
 in_progress
@@ -88,17 +86,17 @@ cancelled
 
 Meanings:
 
-- `pending`: planned, not started.
+- `pending`: planned.
 - `in_progress`: currently being worked on.
-- `blocked`: cannot proceed without a human decision or external dependency.
-- `review`: implementation is complete, but validation/PR/merge is not done.
+- `blocked`: waiting for a human decision or external dependency.
+- `review`: implementation is complete; validation/PR/merge remains.
 - `completed`: validated and done.
 - `cancelled`: intentionally abandoned.
 
 ## Relationships
 
-- `depends_on`: hard dependency. Do not start the task until dependencies are complete unless a human explicitly allows it.
-- `related`: relevant task context, not a blocker.
+- `depends_on`: hard dependency. Start the task after dependencies are complete, unless a human explicitly allows it.
+- `related`: relevant task context.
 - `context_refs`: references durable context files, usually under `backlog/contexts/`.
 - `prs`: optional PR references for code review/version history.
 
@@ -120,14 +118,14 @@ These commands describe intent. An agent may satisfy them by directly editing Ba
 
 1. Follow the host project's rules first.
 2. Locate Backlog data, preferring `backlog/backlog.json`.
-3. Read open tasks: any task whose status is not `completed` or `cancelled`.
+3. Read open tasks: tasks with active statuses such as `pending`, `in_progress`, `blocked`, or `review`.
 4. If the user names a task, load that task plus its `depends_on`, `related`, and `context_refs`.
-5. If no task exists for the work, create one before making durable changes.
+5. If the work has no task yet, create one before making durable changes.
 6. Before implementation, set the task to `in_progress` and append a short `start` event.
 7. Use current-session todo/task tools for small implementation steps only.
 8. If human input is needed, set `blocked`, write `blocked_reason`, and append a `block` event.
 9. When implementation is ready for validation/PR/merge, set `review`.
-10. Set `completed` only after the host project's validation criteria pass.
+10. Set `completed` after the host project's validation criteria pass.
 
 ## Event format
 
@@ -146,7 +144,7 @@ Keep events short. Put long-lived context in `backlog/contexts/` or `backlog/dec
 
 ## Context loading
 
-For a named task, do not load the entire Backlog by default. Load:
+For a named task, load focused context:
 
 - the task itself
 - tasks in `depends_on`
@@ -154,7 +152,7 @@ For a named task, do not load the entire Backlog by default. Load:
 - files referenced by `context_refs`
 - host project rules and relevant module docs
 
-This is the main reason Backlog exists: route AI context instead of dumping the whole project history.
+Backlog routes AI context instead of dumping the whole project history.
 
 ## Editing rules
 
@@ -162,4 +160,4 @@ This is the main reason Backlog exists: route AI context instead of dumping the 
 - Preserve unknown fields.
 - Keep events concise.
 - Prefer appending events over rewriting history.
-- Do not delete completed tasks unless archiving is explicitly requested.
+- Archive completed tasks when cleanup is explicitly requested.
