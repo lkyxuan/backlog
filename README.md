@@ -1,8 +1,8 @@
 # backlog
 
-Backlog is a file-first workflow skill for AI-assisted projects.
+Backlog is a generic, file-first workflow skill for AI-assisted projects.
 
-It is not a task app, server, or CLI product. It is a small protocol plus templates that a host repository installs so agents can share the same long-lived project workflow state.
+It is not a task app, server, or CLI product. It is a small skill/protocol plus templates that a host repository installs so agents can share the same long-lived project workflow state.
 
 ```text
 Backlog skill + backlog files + host project rules = shared AI workflow memory
@@ -16,28 +16,49 @@ Backlog keeps workflow state inside the host repository:
 backlog/backlog.json        # task state source of truth
 backlog/contexts/           # durable task context, optional
 backlog/decisions/          # durable decisions, optional
-.claude/skills/backlog/     # Claude Code adapter, optional
 ```
 
-Agents may edit the files directly as long as they follow `SPEC.md` and `AGENT_PROTOCOL.md`.
+Agents may edit the files directly as long as they follow `SKILL.md` and `SPEC.md`.
 
 GitHub PRs can still be used by the host project for code review, CI, version history, and merges. PRs are references from Backlog, not the workflow source of truth.
 
+## Repository layout
+
+```text
+README.md
+SKILL.md                         # generic Backlog skill, the product core
+SPEC.md                          # Backlog data/file format
+adapters/claude-code/SKILL.md    # Claude Code adapter
+AGENT_PROTOCOL.md                # detailed generic agent behavior
+LICENSE
+templates/simple/backlog/backlog.json
+```
+
 ## Install into a host project
+
+### Generic skill installation
+
+Install these into the host project or the host agent's skill system:
+
+```text
+SKILL.md
+templates/simple/backlog/backlog.json
+```
+
+The host project should end up with:
+
+```text
+backlog/backlog.json
+```
+
+### Claude Code installation
 
 From the host project root:
 
 ```bash
-# 1. Install the Claude Code adapter if the project uses Claude Code
-mkdir -p .claude/skills
-cp -r /path/to/backlog/.claude/skills/backlog .claude/skills/
-
-# 2. Install the simple Backlog template
+mkdir -p .claude/skills/backlog
+cp /path/to/backlog/adapters/claude-code/SKILL.md .claude/skills/backlog/SKILL.md
 cp -r /path/to/backlog/templates/simple/backlog ./backlog
-
-# 3. Optional: copy protocol docs for local reference
-cp /path/to/backlog/SPEC.md ./backlog/SPEC.md
-cp /path/to/backlog/AGENT_PROTOCOL.md ./backlog/AGENT_PROTOCOL.md
 ```
 
 Add this to the host project's `CLAUDE.md`, `AGENTS.md`, Hermes profile, or equivalent agent rules:
@@ -47,8 +68,8 @@ Add this to the host project's `CLAUDE.md`, `AGENTS.md`, Hermes profile, or equi
 
 This project uses Backlog.
 `backlog/backlog.json` is the project workflow source of truth.
-Agents may edit Backlog files directly if they follow `backlog/SPEC.md` and the Backlog skill rules.
-GitHub PRs are for code review/versioning only; Backlog remains the workflow source of truth.
+Agents may edit Backlog files directly if they follow the Backlog skill and `SPEC.md`.
+PRs are for code review/versioning only; Backlog remains the workflow source of truth.
 ```
 
 ## Minimal task
@@ -96,16 +117,6 @@ Backlog task → implementation worker → review/validation → optional PR mer
 5. Mark it `blocked` when a human decision is required.
 6. Mark it `review` when implementation is complete but not validated/merged.
 7. Mark it `completed` only after the host project's validation criteria pass.
-
-## Repo layout
-
-```text
-README.md
-SPEC.md
-AGENT_PROTOCOL.md
-templates/simple/backlog/backlog.json
-.claude/skills/backlog/SKILL.md
-```
 
 ## License
 

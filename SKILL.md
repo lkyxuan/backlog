@@ -1,13 +1,13 @@
 ---
 name: backlog
-version: "6.0.0"
-description: File-first Backlog workflow skill for repo-local AI project management
+version: "7.0.0"
+description: Generic file-first Backlog skill for repo-local AI project management
 user-invocable: true
 ---
 
-# /backlog - file-first workflow skill
+# Backlog skill
 
-Backlog is a skill/protocol, not a required program. It stores long-lived project workflow state in the host repository so multiple agents can share the same task memory.
+Backlog is a generic skill/protocol, not a required program and not a Claude-specific feature. It stores long-lived project workflow state in the host repository so multiple agents can share the same task memory.
 
 Preferred data file:
 
@@ -21,19 +21,19 @@ Legacy fallback:
 docs/backlog.json
 ```
 
-## Commands as user intent
+## User intents
 
-These slash commands describe intent. You may satisfy them by directly editing Backlog files according to `SPEC.md` and `AGENT_PROTOCOL.md`.
+These commands describe intent. An agent may satisfy them by directly editing Backlog files according to `SPEC.md`.
 
-| Command | Meaning |
+| Intent | Meaning |
 |---|---|
-| `/backlog` | Show open tasks |
-| `/backlog add "title"` | Add a task |
-| `/backlog start <id>` | Mark task `in_progress` |
-| `/backlog block <id>` | Mark task `blocked` with reason |
-| `/backlog review <id>` | Mark task `review` after implementation, before validation/merge |
-| `/backlog done <id>` | Mark task `completed` |
-| `/backlog cancel <id>` | Mark task `cancelled` |
+| `show backlog` / `/backlog` | Show open tasks |
+| `add backlog task` / `/backlog add "title"` | Add a task |
+| `start <id>` / `/backlog start <id>` | Mark task `in_progress` |
+| `block <id>` / `/backlog block <id>` | Mark task `blocked` with reason |
+| `review <id>` / `/backlog review <id>` | Mark task `review` after implementation, before validation/merge |
+| `done <id>` / `/backlog done <id>` | Mark task `completed` |
+| `cancel <id>` / `/backlog cancel <id>` | Mark task `cancelled` |
 
 ## Task model
 
@@ -66,7 +66,7 @@ These slash commands describe intent. You may satisfy them by directly editing B
 5. If human input is needed, set `blocked` and write `blocked_reason`.
 6. When implementation is ready for validation/PR/merge, set `review`.
 7. Set `completed` only after the host project's validation criteria pass.
-8. Keep GitHub PR numbers, if any, as optional references in `prs`.
+8. Keep PR numbers, if any, as optional references in `prs`.
 
 ## Context loading
 
