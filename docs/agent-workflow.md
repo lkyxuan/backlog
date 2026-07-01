@@ -9,8 +9,6 @@ scripts/backlog_cli.py   = shared command surface for all agents
 GitHub PRs              = optional code review/versioning layer in the host project
 ```
 
-Backlog does not manage external project-management platforms.
-
 ## Recommended flow
 
 1. Pick or create a backlog task.
