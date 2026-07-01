@@ -1,68 +1,104 @@
 # backlog
 
-跨会话任务追踪 Skill for Claude Code。
+Repo-local cross-session task tracking for Claude Code, Hermes, and other coding agents.
 
-## 特性
+Backlog is a tiny workflow layer installed inside a host project. It keeps long-lived task state in `docs/backlog.json`, exposes a shared CLI at `scripts/backlog_cli.py`, and provides a Claude Code skill as a natural-language wrapper.
 
-- **持久化存储**：任务保存在 `docs/backlog.json`，跨会话保留
-- **简单命令**：`/backlog`、`/backlog add`、`/backlog done`
-- **结构化任务**：支持 why/what/checklist，记录完整上下文
-- **优先级管理**：high/medium/low 优先级分类
+Backlog does **not** manage external project-management platforms. Host projects may still use GitHub PRs for code review, CI, version history, and merging.
 
-## 安装
+## Features
 
-1. 复制 `.claude/skills/backlog/` 到你的项目：
+- **Repo-local source of truth**: task state lives in `docs/backlog.json`
+- **Cross-session**: agents can recover context after restarts
+- **Cross-agent**: Hermes, Claude Code, and other workers use the same CLI
+- **Workflow states**: `pending`, `in_progress`, `blocked`, `review`, `completed`, `cancelled`
+- **Structured context**: `why`, `what`, `acceptance`, `checklist`, `depends_on`, `related`, `context_refs`
+- **No platform lock-in**: no external project-management dependency
+
+## Install into a host project
+
+From the host project root:
 
 ```bash
+# 1. Install the Claude Code skill
 mkdir -p .claude/skills
-cp -r path/to/backlog/.claude/skills/backlog .claude/skills/
-```
+cp -r /path/to/backlog/.claude/skills/backlog .claude/skills/
 
-2. 创建任务文件：
+# 2. Install the shared CLI
+mkdir -p scripts
+cp /path/to/backlog/scripts/backlog_cli.py scripts/backlog_cli.py
 
-```bash
+# 3. Create initial task data if the project does not have one yet
 mkdir -p docs
-cp path/to/backlog/examples/backlog.json docs/backlog.json
+cp /path/to/backlog/examples/backlog.json docs/backlog.json
+
+# 4. Optional: copy workflow docs
+cp /path/to/backlog/docs/agent-workflow.md docs/agent-workflow.md
 ```
 
-3. （可选）在 `CLAUDE.md` 中添加说明：
+Add this to the host project's `CLAUDE.md` or equivalent agent rules:
 
 ```markdown
-## Skills
+## Backlog
 
-- **/backlog** - 待办队列管理（查看待办、添加任务、标记完成）
+`docs/backlog.json` is the project workflow source of truth.
+Use `python3 scripts/backlog_cli.py` or `/backlog` to update task state.
+GitHub PRs may be used for code review/versioning, but Backlog remains the workflow source of truth.
 ```
 
-## 使用
+## CLI usage
 
-| 命令 | 说明 |
-|------|------|
-| `/backlog` | 显示所有待办任务 |
-| `/backlog add "任务标题"` | 添加新任务 |
-| `/backlog start <id>` | 开始任务 |
-| `/backlog done <id>` | 完成任务 |
+```bash
+python3 scripts/backlog_cli.py list --open
+python3 scripts/backlog_cli.py show <id>
+python3 scripts/backlog_cli.py start <id> --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py block <id> --reason "needs human decision" --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py review <id> --summary "implementation ready for validation" --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py done <id> --summary "validated and merged" --kanban-task <t_xxx>
+python3 scripts/backlog_cli.py cancel <id> --reason "obsolete"
+```
 
-## 任务结构
+## Task structure
 
 ```json
 {
   "id": "short-id",
-  "title": "任务标题",
-  "status": "pending | in_progress | completed",
+  "title": "Human-readable title",
+  "status": "pending | in_progress | blocked | review | completed | cancelled",
   "priority": "high | medium | low",
-  "why": "为什么要做",
-  "what": "具体做什么",
-  "checklist": ["步骤1", "步骤2"]
+  "type": "bug | feature | chore | research | docs | ops",
+  "area": "spider | consumer | storage | monitoring | infra | api | frontend",
+  "why": "Why this task exists",
+  "what": "What should be done",
+  "acceptance": ["Acceptance criterion 1", "Acceptance criterion 2"],
+  "checklist": ["Step 1", "Step 2"],
+  "depends_on": ["other-task-id"],
+  "related": ["related-task-id"],
+  "context_refs": ["context-id"],
+  "events": []
 }
 ```
 
-## 与 Claude Code 内置 Task 的区别
+## Recommended agent flow
 
-| 特性 | /backlog | Claude Code Task |
-|------|----------|------------------|
-| 存储 | 文件持久化 | 会话内存 |
-| 生命周期 | 跨会话 | 会话结束消失 |
-| 用途 | 长期待办队列 | 当前工作步骤分解 |
+```text
+Backlog task → implementation worker → review/validation → optional PR merge → backlog done
+```
+
+1. Locate the task with `list --open` or `show <id>`.
+2. Mark it `in_progress` before implementation.
+3. Mark it `blocked` if a human decision is needed.
+4. Mark it `review` after implementation, before validation/merge.
+5. Mark it `completed` only after the host project's validation criteria pass.
+
+## Difference from Claude Code's built-in Task/Todo tool
+
+| Feature | Backlog | Claude Code Task/Todo |
+|---|---|---|
+| Storage | Repo file | Session memory |
+| Lifecycle | Cross-session, cross-agent | Current session only |
+| Purpose | Long-lived project workflow state | Current implementation steps |
+| Detail | why/what/acceptance/checklist/context | Short task descriptions |
 
 ## License
 

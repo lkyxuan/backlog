@@ -1,38 +1,71 @@
 {
   "version": "1.0",
-  "description": "跨会话待办队列 - 长期任务追踪",
+  "description": "Cross-session project Backlog - repo-local workflow state",
   "tasks": [
     {
       "id": "example-task",
-      "title": "示例任务：添加用户认证功能",
+      "title": "Example: add user authentication",
       "status": "pending",
       "priority": "high",
+      "type": "feature",
+      "area": "api",
       "created": "2026-01-28T10:00:00Z",
-      "why": "用户需要登录才能访问受保护的资源",
-      "what": "实现 JWT 认证，包括登录、注册、token 刷新接口",
+      "why": "Users need to sign in before accessing protected resources.",
+      "what": "Implement JWT authentication, including register, login, and token refresh endpoints.",
+      "acceptance": [
+        "Users can register and log in",
+        "Protected endpoints reject missing or invalid tokens",
+        "Auth tests pass"
+      ],
       "checklist": [
-        "创建 User 模型",
-        "实现注册接口",
-        "实现登录接口",
-        "添加 JWT 中间件",
-        "编写测试"
+        "Create User model",
+        "Implement register endpoint",
+        "Implement login endpoint",
+        "Add JWT middleware",
+        "Write tests"
+      ],
+      "depends_on": [],
+      "related": [],
+      "context_refs": [],
+      "events": []
+    },
+    {
+      "id": "review-example",
+      "title": "Example: implementation awaiting review",
+      "status": "review",
+      "priority": "medium",
+      "type": "chore",
+      "area": "infra",
+      "created": "2026-01-28T11:00:00Z",
+      "what": "Demonstrates the review state used after implementation and before validation/merge.",
+      "review_summary": "Implementation complete; awaiting human/agent validation.",
+      "events": [
+        {
+          "time": "2026-01-28T11:30:00Z",
+          "event": "review",
+          "text": "Implementation complete; awaiting validation."
+        }
       ]
     },
     {
       "id": "completed-example",
-      "title": "已完成示例：项目初始化",
+      "title": "Completed example: initialize project",
       "status": "completed",
       "priority": "high",
+      "type": "chore",
+      "area": "infra",
       "created": "2026-01-27T10:00:00Z",
-      "why": "需要搭建项目基础结构",
-      "what": "初始化项目，配置开发环境"
+      "completed": "2026-01-27T12:00:00Z",
+      "why": "The project needed a base structure.",
+      "what": "Initialize project and configure development environment.",
+      "result": "Project structure initialized.",
+      "events": [
+        {
+          "time": "2026-01-27T12:00:00Z",
+          "event": "done",
+          "text": "Project structure initialized."
+        }
+      ]
     }
-  ],
-  "archive": [],
-  "stats": {
-    "total": 2,
-    "pending": 1,
-    "in_progress": 0,
-    "completed": 1
-  }
+  ]
 }
