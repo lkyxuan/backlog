@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "Cross-session project Backlog - repo-local workflow state",
+  "description": "Example repo-local Backlog workflow state",
   "tasks": [
     {
       "id": "example-task",
@@ -27,6 +27,7 @@
       "depends_on": [],
       "related": [],
       "context_refs": [],
+      "prs": [],
       "events": []
     },
     {
@@ -39,9 +40,11 @@
       "created": "2026-01-28T11:00:00Z",
       "what": "Demonstrates the review state used after implementation and before validation/merge.",
       "review_summary": "Implementation complete; awaiting human/agent validation.",
+      "prs": [1],
       "events": [
         {
           "time": "2026-01-28T11:30:00Z",
+          "actor": "example-agent",
           "event": "review",
           "text": "Implementation complete; awaiting validation."
         }
@@ -62,6 +65,7 @@
       "events": [
         {
           "time": "2026-01-27T12:00:00Z",
+          "actor": "example-agent",
           "event": "done",
           "text": "Project structure initialized."
         }

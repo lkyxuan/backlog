@@ -1,104 +1,111 @@
 # backlog
 
-Repo-local cross-session task tracking for Claude Code, Hermes, and other coding agents.
+Backlog is a file-first workflow skill for AI-assisted projects.
 
-Backlog is a tiny workflow layer installed inside a host project. It keeps long-lived task state in `docs/backlog.json`, exposes a shared CLI at `scripts/backlog_cli.py`, and provides a Claude Code skill as a natural-language wrapper.
+It is not a task app, server, or CLI product. It is a small protocol plus templates that a host repository installs so agents can share the same long-lived project workflow state.
 
-Backlog does **not** manage external project-management platforms. Host projects may still use GitHub PRs for code review, CI, version history, and merging.
+```text
+Backlog skill + backlog files + host project rules = shared AI workflow memory
+```
 
-## Features
+## Core idea
 
-- **Repo-local source of truth**: task state lives in `docs/backlog.json`
-- **Cross-session**: agents can recover context after restarts
-- **Cross-agent**: Hermes, Claude Code, and other workers use the same CLI
-- **Workflow states**: `pending`, `in_progress`, `blocked`, `review`, `completed`, `cancelled`
-- **Structured context**: `why`, `what`, `acceptance`, `checklist`, `depends_on`, `related`, `context_refs`
-- **No platform lock-in**: no external project-management dependency
+Backlog keeps workflow state inside the host repository:
+
+```text
+backlog/backlog.json        # task state source of truth
+backlog/contexts/           # durable task context, optional
+backlog/decisions/          # durable decisions, optional
+.claude/skills/backlog/     # Claude Code adapter, optional
+```
+
+Agents may edit the files directly as long as they follow `SPEC.md` and `AGENT_PROTOCOL.md`.
+
+GitHub PRs can still be used by the host project for code review, CI, version history, and merges. PRs are references from Backlog, not the workflow source of truth.
 
 ## Install into a host project
 
 From the host project root:
 
 ```bash
-# 1. Install the Claude Code skill
+# 1. Install the Claude Code adapter if the project uses Claude Code
 mkdir -p .claude/skills
 cp -r /path/to/backlog/.claude/skills/backlog .claude/skills/
 
-# 2. Install the shared CLI
-mkdir -p scripts
-cp /path/to/backlog/scripts/backlog_cli.py scripts/backlog_cli.py
+# 2. Install the simple Backlog template
+cp -r /path/to/backlog/templates/simple/backlog ./backlog
 
-# 3. Create initial task data if the project does not have one yet
-mkdir -p docs
-cp /path/to/backlog/examples/backlog.json docs/backlog.json
-
-# 4. Optional: copy workflow docs
-cp /path/to/backlog/docs/agent-workflow.md docs/agent-workflow.md
+# 3. Optional: copy protocol docs for local reference
+cp /path/to/backlog/SPEC.md ./backlog/SPEC.md
+cp /path/to/backlog/AGENT_PROTOCOL.md ./backlog/AGENT_PROTOCOL.md
 ```
 
-Add this to the host project's `CLAUDE.md` or equivalent agent rules:
+Add this to the host project's `CLAUDE.md`, `AGENTS.md`, Hermes profile, or equivalent agent rules:
 
 ```markdown
 ## Backlog
 
-`docs/backlog.json` is the project workflow source of truth.
-Use `python3 scripts/backlog_cli.py` or `/backlog` to update task state.
-GitHub PRs may be used for code review/versioning, but Backlog remains the workflow source of truth.
+This project uses Backlog.
+`backlog/backlog.json` is the project workflow source of truth.
+Agents may edit Backlog files directly if they follow `backlog/SPEC.md` and the Backlog skill rules.
+GitHub PRs are for code review/versioning only; Backlog remains the workflow source of truth.
 ```
 
-## CLI usage
-
-```bash
-python3 scripts/backlog_cli.py list --open
-python3 scripts/backlog_cli.py show <id>
-python3 scripts/backlog_cli.py start <id> --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py block <id> --reason "needs human decision" --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py review <id> --summary "implementation ready for validation" --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py done <id> --summary "validated and merged" --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py cancel <id> --reason "obsolete"
-```
-
-## Task structure
+## Minimal task
 
 ```json
 {
   "id": "short-id",
   "title": "Human-readable title",
-  "status": "pending | in_progress | blocked | review | completed | cancelled",
-  "priority": "high | medium | low",
-  "type": "bug | feature | chore | research | docs | ops",
-  "area": "spider | consumer | storage | monitoring | infra | api | frontend",
+  "status": "pending",
+  "priority": "medium",
+  "type": "feature",
+  "area": "api",
   "why": "Why this task exists",
   "what": "What should be done",
-  "acceptance": ["Acceptance criterion 1", "Acceptance criterion 2"],
-  "checklist": ["Step 1", "Step 2"],
-  "depends_on": ["other-task-id"],
-  "related": ["related-task-id"],
-  "context_refs": ["context-id"],
+  "acceptance": [],
+  "checklist": [],
+  "depends_on": [],
+  "related": [],
+  "context_refs": [],
   "events": []
 }
+```
+
+## Workflow states
+
+```text
+pending       planned, not started
+in_progress   currently being worked on
+blocked       needs a human decision or external unblock
+review        implementation done; waiting for validation/PR/merge
+completed     validated and done
+cancelled     intentionally abandoned
 ```
 
 ## Recommended agent flow
 
 ```text
-Backlog task → implementation worker → review/validation → optional PR merge → backlog done
+Backlog task → implementation worker → review/validation → optional PR merge → Backlog completed
 ```
 
-1. Locate the task with `list --open` or `show <id>`.
-2. Mark it `in_progress` before implementation.
-3. Mark it `blocked` if a human decision is needed.
-4. Mark it `review` after implementation, before validation/merge.
-5. Mark it `completed` only after the host project's validation criteria pass.
+1. Read host project rules first.
+2. Read `backlog/backlog.json`.
+3. Pick or create a task.
+4. Mark it `in_progress` before implementation.
+5. Mark it `blocked` when a human decision is required.
+6. Mark it `review` when implementation is complete but not validated/merged.
+7. Mark it `completed` only after the host project's validation criteria pass.
 
-## Difference from Claude Code's built-in Task/Todo tool
+## Repo layout
 
-| Feature | Backlog | Claude Code Task/Todo |
-|---|---|---|
-| Storage | Repo file | Session memory |
-| Lifecycle | Cross-session, cross-agent | Current session only |
-| Purpose | Long-lived project workflow state | Current implementation steps |
-| Detail | why/what/acceptance/checklist/context | Short task descriptions |
+```text
+README.md
+SPEC.md
+AGENT_PROTOCOL.md
+templates/simple/backlog/backlog.json
+.claude/skills/backlog/SKILL.md
+```
 
 ## License
 

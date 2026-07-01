@@ -1,17 +1,18 @@
 # Agent workflow with Backlog
 
-Backlog is a small repo-local workflow layer for AI-assisted projects.
+Backlog is a file-first workflow skill for AI-assisted projects.
 
 ```text
-docs/backlog.json        = source of truth for workflow state
-scripts/backlog_cli.py   = shared command surface for all agents
-.claude/skills/backlog   = Claude Code natural-language wrapper
-GitHub PRs              = optional code review/versioning layer in the host project
+backlog/backlog.json      = workflow state source of truth
+backlog/contexts/         = durable context, optional
+backlog/decisions/        = durable decisions, optional
+.claude/skills/backlog    = Claude Code adapter, optional
+GitHub PRs                = optional code review/versioning references
 ```
 
 ## Recommended flow
 
-1. Pick or create a backlog task.
+1. Pick or create a Backlog task.
 2. Mark it `in_progress` before implementation starts.
 3. Use the host project's coding agent / worker to implement.
 4. Mark it `blocked` if a human decision is needed.
@@ -25,8 +26,9 @@ You are working in <host-project-path>.
 Read the host project's agent rules first.
 
 Source of truth:
-- backlog-id: <id>
-- execution queue task: <optional kanban/task id>
+- Backlog file: backlog/backlog.json
+- Backlog task id: <id>
+- Execution queue task: <optional kanban/task id>
 
 Task:
 <what to implement>
@@ -36,8 +38,9 @@ Acceptance criteria:
 - <criterion 2>
 
 Rules:
-- docs/backlog.json is the workflow source of truth.
-- Use python3 scripts/backlog_cli.py start/block/review/done to reflect task state.
+- Backlog is file-first; edit Backlog JSON directly according to SPEC.md.
+- Use current-session todo tools for implementation steps only.
+- Mark the Backlog task review/completed according to host project validation rules.
 - Do not commit unless explicitly asked or the host project workflow requires it.
 - Report changed files and verification run.
 ```

@@ -1,29 +1,41 @@
 ---
 name: backlog
-version: "5.0.0"
-description: Cross-session repo-local Backlog workflow management
+version: "6.0.0"
+description: File-first Backlog workflow skill for repo-local AI project management
 user-invocable: true
 ---
 
-# /backlog - repo-local workflow management
+# /backlog - file-first workflow skill
 
-Backlog stores long-lived project workflow state in `docs/backlog.json`. It is designed to be installed inside a host project, so any agent can recover task state across sessions.
+Backlog is a skill/protocol, not a required program. It stores long-lived project workflow state in the host repository so multiple agents can share the same task memory.
 
-External project-management platforms are not part of Backlog. Host projects may still use GitHub PRs for code review, version history, CI, and merging.
+Preferred data file:
 
-## Commands
+```text
+backlog/backlog.json
+```
+
+Legacy fallback:
+
+```text
+docs/backlog.json
+```
+
+## Commands as user intent
+
+These slash commands describe intent. You may satisfy them by directly editing Backlog files according to `SPEC.md` and `AGENT_PROTOCOL.md`.
 
 | Command | Meaning |
 |---|---|
 | `/backlog` | Show open tasks |
-| `/backlog add "title"` | Add a task to `docs/backlog.json` |
+| `/backlog add "title"` | Add a task |
 | `/backlog start <id>` | Mark task `in_progress` |
 | `/backlog block <id>` | Mark task `blocked` with reason |
 | `/backlog review <id>` | Mark task `review` after implementation, before validation/merge |
 | `/backlog done <id>` | Mark task `completed` |
 | `/backlog cancel <id>` | Mark task `cancelled` |
 
-## Data model
+## Task model
 
 ```json
 {
@@ -32,57 +44,44 @@ External project-management platforms are not part of Backlog. Host projects may
   "status": "pending | in_progress | blocked | review | completed | cancelled",
   "priority": "high | medium | low",
   "type": "bug | feature | chore | research | docs | ops",
-  "area": "spider | consumer | storage | monitoring | infra | api | frontend",
+  "area": "project-specific area",
   "why": "Why this task exists",
   "what": "What should be done",
-  "acceptance": ["Acceptance criterion 1", "Acceptance criterion 2"],
-  "checklist": ["Step 1", "Step 2"],
+  "acceptance": ["Acceptance criterion"],
+  "checklist": ["Implementation step"],
   "depends_on": ["other-task-id"],
   "related": ["related-task-id"],
   "context_refs": ["context-id"],
+  "prs": [],
   "events": []
 }
 ```
 
-Field notes:
-- `id`: short English identifier, e.g. `merge-queues`.
-- `title`: concise title that humans understand quickly.
-- `depends_on`: hard dependency; do not start current task before these are done.
-- `related`: relevant context only; not a blocking relationship.
-- `context_refs`: references to durable project context docs, often under `docs/backlog/contexts/` in the host project.
-
 ## Agent behavior
 
-1. Session start: read open backlog tasks.
-2. Before work: locate the backlog task; create one if missing.
-3. Starting work: set `status → in_progress`.
-4. Implementation finished but not validated/merged: set `status → review`.
-5. Human decision needed: set `status → blocked` with a clear reason.
-6. Validation/merge done: set `status → completed`.
-7. Work abandoned: set `status → cancelled`.
-8. Code changes should still go through the host project's branch/PR workflow when applicable.
+1. Read host project rules first.
+2. Locate Backlog data, preferring `backlog/backlog.json`.
+3. Show or select open tasks when asked.
+4. Before implementation, set the task to `in_progress` and append a short `start` event.
+5. If human input is needed, set `blocked` and write `blocked_reason`.
+6. When implementation is ready for validation/PR/merge, set `review`.
+7. Set `completed` only after the host project's validation criteria pass.
+8. Keep GitHub PR numbers, if any, as optional references in `prs`.
 
-## Shared CLI
+## Context loading
 
-All agents can use the repo-local CLI instead of depending on a specific slash-command runtime:
+For a named task, do not load the entire Backlog by default. Load:
 
-```bash
-python3 scripts/backlog_cli.py list --open
-python3 scripts/backlog_cli.py show <id>
-python3 scripts/backlog_cli.py start <id> --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py block <id> --reason "..." --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py review <id> --summary "..." --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py done <id> --summary "..." --kanban-task <t_xxx>
-python3 scripts/backlog_cli.py cancel <id> --reason "..."
-```
+- the task itself
+- tasks in `depends_on`
+- tasks in `related`
+- files referenced by `context_refs`
+- host project rules and relevant module docs
 
-This skill is the natural-language wrapper for that CLI. If uncertain, use the CLI directly.
+## Editing rules
 
-## Difference from Claude Code's built-in Task/Todo tool
-
-| Feature | Backlog | Claude Code Task/Todo |
-|---|---|---|
-| Storage | Repo file | Session memory |
-| Lifecycle | Cross-session, cross-agent | Current session only |
-| Purpose | Long-lived project workflow state | Current implementation steps |
-| Detail | why/what/acceptance/checklist/context | Short task descriptions |
+- Preserve valid JSON.
+- Preserve unknown fields.
+- Keep events short.
+- Put long-lived context in `backlog/contexts/`.
+- Prefer appending events over rewriting history.
